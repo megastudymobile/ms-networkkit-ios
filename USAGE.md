@@ -1,0 +1,329 @@
+# MGNetworkKit 사용 가이드
+
+## 📦 다른 프로젝트에서 사용하는 방법
+
+### 방법 1: 로컬 패키지로 추가 (개발 중)
+
+#### Xcode에서 추가
+1. File → Add Package Dependencies...
+2. "Add Local..." 버튼 클릭
+3. `MGMGNetworkKit` 폴더 선택
+4. "Add Package" 클릭
+
+#### Package.swift에 추가
+```swift
+dependencies: [
+    .package(path: "../MGMGNetworkKit")
+]
+```
+
+---
+
+### 방법 2: Git 저장소로 추가 (배포용)
+
+#### 1. Git 저장소 초기화
+```bash
+cd /Users/kimdongjoo/Desktop/MGMGNetworkKit
+git init
+git add .
+git commit -m "Initial commit: MGNetworkKit v1.0.0"
+git tag 1.0.0
+```
+
+#### 2. GitHub/GitLab에 푸시
+```bash
+git remote add origin https://github.com/your-org/MGNetworkKit.git
+git push -u origin main
+git push --tags
+```
+
+#### 3. 다른 프로젝트에서 사용
+```swift
+// Package.swift
+dependencies: [
+    .package(url: "https://github.com/your-org/MGNetworkKit.git", from: "1.0.0")
+]
+```
+
+또는 Xcode에서:
+- File → Add Package Dependencies...
+- URL 입력: `https://github.com/your-org/MGNetworkKit.git`
+
+---
+
+### 방법 3: Xcode 프로젝트에 직접 추가
+
+1. MGMGNetworkKit 폴더를 프로젝트 폴더 옆에 배치
+```
+YourProject/
+├── YourProject.xcodeproj
+└── ...
+
+MGMGNetworkKit/
+├── Package.swift
+└── Sources/
+```
+
+2. Xcode에서:
+   - File → Add Package Dependencies...
+   - Add Local... → MGMGNetworkKit 선택
+
+---
+
+## 🚀 빠른 시작
+
+### 1. Import
+```swift
+import MGNetworkKit
+```
+
+### 2. Configuration 설정
+```swift
+let config = NetworkConfiguration(
+    baseURL: "https://api.example.com",
+    timeout: 30,
+    commonHeaders: ["Content-Type": "application/json"]
+)
+
+let service = NetworkService(configuration: config)
+```
+
+### 3. API 요청 정의
+```swift
+struct GetUserRequest: Requestable {
+    typealias Response = User
+    
+    let userId: String
+    
+    var path: String { "/users/\(userId)" }
+    var method: HTTPMethod { .get }
+}
+
+struct User: Responsable {
+    let id: String
+    let name: String
+    let email: String
+}
+```
+
+### 4. 요청 실행
+```swift
+Task {
+    do {
+        let user = try await service.request(GetUserRequest(userId: "123"))
+        print(user.name)
+    } catch {
+        print("Error: \(error)")
+    }
+}
+```
+
+---
+
+## 🔧 고급 사용법
+
+### Interceptor 사용
+
+#### 인증 토큰 자동 추가
+```swift
+final class AuthAdapter: RequestAdapter {
+    func adapt(_ request: URLRequest) async throws -> URLRequest {
+        var adapted = request
+        let token = await TokenManager.shared.getToken()
+        adapted.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        return adapted
+    }
+}
+
+let config = NetworkConfiguration(
+    baseURL: "https://api.example.com",
+    requestAdapter: AuthAdapter()
+)
+```
+
+#### 로깅 추가
+```swift
+final class LoggingInterceptor: ResponseInterceptor {
+    func intercept(data: Data, response: URLResponse) async throws {
+        if let httpResponse = response as? HTTPURLResponse {
+            print("📡 [\(httpResponse.statusCode)] \(httpResponse.url?.path ?? "")")
+            if let json = try? JSONSerialization.jsonObject(with: data) {
+                print("📦 Response: \(json)")
+            }
+        }
+    }
+}
+
+let config = NetworkConfiguration(
+    baseURL: "https://api.example.com",
+    responseInterceptor: LoggingInterceptor()
+)
+```
+
+#### 자동 재시도
+```swift
+let config = NetworkConfiguration(
+    baseURL: "https://api.example.com",
+    retryPolicy: DefaultRetryPolicy(
+        maxRetryCount: 3,
+        retryableStatusCodes: [408, 500, 502, 503],
+        strategy: .exponentialBackoff(base: 2.0)
+    )
+)
+```
+
+---
+
+## 📝 예제 프로젝트
+
+### JSONPlaceholder API 사용 예시
+
+```swift
+import MGNetworkKit
+import SwiftUI
+
+// 1. Configuration
+let config = NetworkConfiguration(
+    baseURL: "https://jsonplaceholder.typicode.com",
+    timeout: 30,
+    commonHeaders: ["Content-Type": "application/json"],
+    configureDecoder: { decoder in
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+    },
+    responseInterceptor: LoggingInterceptor(),
+    retryPolicy: DefaultRetryPolicy(maxRetryCount: 3)
+)
+
+// 2. API Requests
+struct GetPostsRequest: Requestable {
+    typealias Response = [Post]
+    
+    var path: String { "/posts" }
+    var method: HTTPMethod { .get }
+}
+
+struct CreatePostRequest: Requestable {
+    typealias Response = Post
+    
+    let title: String
+    let body: String
+    let userId: Int
+    
+    var path: String { "/posts" }
+    var method: HTTPMethod { .post }
+    var headers: [String: String]? {
+        [HTTPHeader.contentType: ContentType.json]
+    }
+    var body: Data? {
+        try? JSONEncoder().encode([
+            "title": title,
+            "body": body,
+            "userId": userId
+        ])
+    }
+}
+
+// 3. Response Models
+struct Post: Responsable {
+    let id: Int
+    let userId: Int
+    let title: String
+    let body: String
+}
+
+// 4. ViewModel
+@MainActor
+class PostViewModel: ObservableObject {
+    @Published var posts: [Post] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+    private let service = NetworkService(configuration: config)
+    
+    func fetchPosts() async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            posts = try await service.request(GetPostsRequest())
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
+    
+    func createPost(title: String, body: String) async {
+        do {
+            let newPost = try await service.request(
+                CreatePostRequest(title: title, body: body, userId: 1)
+            )
+            posts.insert(newPost, at: 0)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// 5. View
+struct PostListView: View {
+    @StateObject private var viewModel = PostViewModel()
+    
+    var body: some View {
+        List(viewModel.posts, id: \.id) { post in
+            VStack(alignment: .leading) {
+                Text(post.title)
+                    .font(.headline)
+                Text(post.body)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+        }
+        .task {
+            await viewModel.fetchPosts()
+        }
+    }
+}
+```
+
+---
+
+## 🧪 테스트
+
+### 단위 테스트
+```bash
+cd MGMGNetworkKit
+swift test
+```
+
+### Xcode에서 테스트
+```bash
+xcodebuild test -scheme MGNetworkKit -destination 'platform=iOS Simulator,name=iPhone 15'
+```
+
+---
+
+## 📚 추가 문서
+
+- [README.md](README.md) - 기본 사용법
+- [Package.swift](Package.swift) - 패키지 설정
+
+---
+
+## 🆘 문제 해결
+
+### 빌드 에러: "Cannot find 'MGNetworkKit' in scope"
+→ File → Add Package Dependencies에서 MGNetworkKit 추가 확인
+
+### 빌드 에러: "Module 'MGNetworkKit' not found"
+→ Target → Build Phases → Link Binary With Libraries에 MGNetworkKit 추가
+
+### Swift 버전 에러
+→ Xcode 16.0+ 및 Swift 6.0+ 필요
+
+---
+
+## 📞 지원
+
+이슈가 있으면 GitHub Issues에 등록해주세요.
+
