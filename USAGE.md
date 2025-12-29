@@ -1,4 +1,4 @@
-# MGNetworkKit 사용 가이드
+# MegaNetworkKit 사용 가이드
 
 ## 📦 다른 프로젝트에서 사용하는 방법
 
@@ -7,13 +7,13 @@
 #### Xcode에서 추가
 1. File → Add Package Dependencies...
 2. "Add Local..." 버튼 클릭
-3. `MGMGNetworkKit` 폴더 선택
+3. `MegaNetworkKit` 폴더 선택
 4. "Add Package" 클릭
 
 #### Package.swift에 추가
 ```swift
 dependencies: [
-    .package(path: "../MGMGNetworkKit")
+    .package(path: "../MegaNetworkKit")
 ]
 ```
 
@@ -23,16 +23,16 @@ dependencies: [
 
 #### 1. Git 저장소 초기화
 ```bash
-cd /Users/kimdongjoo/Desktop/MGMGNetworkKit
+cd /Users/kimdongjoo/Desktop/MegaNetworkKit
 git init
 git add .
-git commit -m "Initial commit: MGNetworkKit v1.0.0"
+git commit -m "Initial commit: MegaNetworkKit v1.0.0"
 git tag 1.0.0
 ```
 
 #### 2. GitHub/GitLab에 푸시
 ```bash
-git remote add origin https://github.com/your-org/MGNetworkKit.git
+git remote add origin https://github.com/your-org/MegaNetworkKit.git
 git push -u origin main
 git push --tags
 ```
@@ -41,32 +41,32 @@ git push --tags
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/your-org/MGNetworkKit.git", from: "1.0.0")
+    .package(url: "https://github.com/your-org/MegaNetworkKit.git", from: "1.0.0")
 ]
 ```
 
 또는 Xcode에서:
 - File → Add Package Dependencies...
-- URL 입력: `https://github.com/your-org/MGNetworkKit.git`
+- URL 입력: `https://github.com/your-org/MegaNetworkKit.git`
 
 ---
 
 ### 방법 3: Xcode 프로젝트에 직접 추가
 
-1. MGMGNetworkKit 폴더를 프로젝트 폴더 옆에 배치
+1. MegaNetworkKit 폴더를 프로젝트 폴더 옆에 배치
 ```
 YourProject/
 ├── YourProject.xcodeproj
 └── ...
 
-MGMGNetworkKit/
+MegaNetworkKit/
 ├── Package.swift
 └── Sources/
 ```
 
 2. Xcode에서:
    - File → Add Package Dependencies...
-   - Add Local... → MGMGNetworkKit 선택
+   - Add Local... → MegaNetworkKit 선택
 
 ---
 
@@ -74,7 +74,7 @@ MGMGNetworkKit/
 
 ### 1. Import
 ```swift
-import MGNetworkKit
+import MegaNetworkKit
 ```
 
 ### 2. Configuration 설정
@@ -179,7 +179,7 @@ let config = NetworkConfiguration(
 ### JSONPlaceholder API 사용 예시
 
 ```swift
-import MGNetworkKit
+import MegaNetworkKit
 import SwiftUI
 
 // 1. Configuration
@@ -292,13 +292,13 @@ struct PostListView: View {
 
 ### 단위 테스트
 ```bash
-cd MGMGNetworkKit
+cd MegaNetworkKit
 swift test
 ```
 
 ### Xcode에서 테스트
 ```bash
-xcodebuild test -scheme MGNetworkKit -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -scheme MegaNetworkKit -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 ---
@@ -312,11 +312,11 @@ xcodebuild test -scheme MGNetworkKit -destination 'platform=iOS Simulator,name=i
 
 ## 🆘 문제 해결
 
-### 빌드 에러: "Cannot find 'MGNetworkKit' in scope"
-→ File → Add Package Dependencies에서 MGNetworkKit 추가 확인
+### 빌드 에러: "Cannot find 'MegaNetworkKit' in scope"
+→ File → Add Package Dependencies에서 MegaNetworkKit 추가 확인
 
-### 빌드 에러: "Module 'MGNetworkKit' not found"
-→ Target → Build Phases → Link Binary With Libraries에 MGNetworkKit 추가
+### 빌드 에러: "Module 'MegaNetworkKit' not found"
+→ Target → Build Phases → Link Binary With Libraries에 MegaNetworkKit 추가
 
 ### Swift 버전 에러
 → Xcode 16.0+ 및 Swift 6.0+ 필요

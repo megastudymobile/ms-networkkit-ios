@@ -1,4 +1,4 @@
-# MGNetworkKit
+# MegaNetworkKit
 
 Swift 6 기반의 현대적이고 타입 안전한 iOS 네트워크 라이브러리입니다.
 
@@ -34,7 +34,7 @@ Swift 6 기반의 현대적이고 타입 안전한 iOS 네트워크 라이브러
 
 ```swift
 dependencies: [
-    .package(url: "https://gitlab.megastudy.net/mobiledev/MGNetworkKit.git", from: "1.0.0")
+    .package(url: "https://gitlab.megastudy.net/mobiledev/MegaNetworkKit.git", from: "1.0.0")
 ]
 ```
 
@@ -42,7 +42,7 @@ dependencies: [
 
 ```swift
 dependencies: [
-    .package(path: "../MGNetworkKit")
+    .package(path: "../MegaNetworkKit")
 ]
 ```
 
@@ -51,7 +51,7 @@ dependencies: [
 ```swift
 .target(
     name: "YourTarget",
-    dependencies: ["MGNetworkKit"]
+    dependencies: ["MegaNetworkKit"]
 )
 ```
 
@@ -60,7 +60,7 @@ dependencies: [
 ### 1. NetworkConfiguration 설정
 
 ```swift
-import MGNetworkKit
+import MegaNetworkKit
 
 let configuration = NetworkConfiguration(
     baseURL: "https://api.example.com",

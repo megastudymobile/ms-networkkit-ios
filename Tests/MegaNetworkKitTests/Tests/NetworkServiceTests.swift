@@ -1,5 +1,5 @@
 import XCTest
-@testable import MGNetworkKit
+@testable import MegaNetworkKit
 
 final class NetworkServiceTests: XCTestCase {
     // MARK: - Properties

@@ -1,5 +1,5 @@
 import Foundation
-@testable import MGNetworkKit
+@testable import MegaNetworkKit
 
 // MARK: - Mock Request
 

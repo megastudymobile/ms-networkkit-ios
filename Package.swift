@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "MGNetworkKit",
+    name: "MegaNetworkKit",
     platforms: [
         .iOS(.v15),
         .macOS(.v12)
@@ -12,8 +12,8 @@ let package = Package(
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "MGNetworkKit",
-            targets: ["MGNetworkKit"]
+            name: "MegaNetworkKit",
+            targets: ["MegaNetworkKit"]
         ),
     ],
     dependencies: [
@@ -24,17 +24,17 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "MGNetworkKit",
+            name: "MegaNetworkKit",
             dependencies: [],
-            path: "Sources/MGNetworkKit",
+            path: "Sources/MegaNetworkKit",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
         ),
         .testTarget(
-            name: "MGNetworkKitTests",
-            dependencies: ["MGNetworkKit"],
-            path: "Tests/MGNetworkKitTests",
+            name: "MegaNetworkKitTests",
+            dependencies: ["MegaNetworkKit"],
+            path: "Tests/MegaNetworkKitTests",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
