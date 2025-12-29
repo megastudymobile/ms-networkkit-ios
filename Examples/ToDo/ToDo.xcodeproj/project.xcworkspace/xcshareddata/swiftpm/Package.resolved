@@ -1,0 +1,15 @@
+{
+  "originHash" : "cb02e39d880405c9dc9194cc0c666be244355173be91be53c0a6448a803d0ad9",
+  "pins" : [
+    {
+      "identity" : "ms-networkkit-ios",
+      "kind" : "localSourceControl",
+      "location" : "/Users/kimdongjoo/ms-networkkit-ios",
+      "state" : {
+        "branch" : "main",
+        "revision" : "ef7c4abec46fc0e6133645d7e856f4c180dc0191"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -12,6 +12,7 @@ Swift 6 기반의 현대적이고 타입 안전한 iOS 네트워크 라이브러
 - ✅ **Sendable** 준수로 Thread-Safe 보장
 - ✅ **순수 Swift** (외부 의존성 없음)
 - ✅ **Interceptor** 지원 (RequestAdapter, ResponseInterceptor, RetryPolicy)
+- ✅ **TargetType** 지원 (Moya 스타일 Enum 기반 API 정의)
 - ✅ **iOS 15.0+** 지원
 
 ## 요구사항
@@ -118,6 +119,161 @@ Task {
     }
 }
 ```
+
+## TargetType (Enum 기반 API 정의)
+
+Moya 스타일의 Enum 기반 API 정의를 지원합니다. 관련 API를 하나의 Enum으로 그룹화하여 더 간결하고 타입 안전한 코드를 작성할 수 있습니다.
+
+### 1. TargetType 정의
+
+```swift
+import MegaNetworkKit
+
+enum UserAPI {
+    case fetchUsers
+    case fetchUser(id: Int)
+    case createUser(name: String, email: String)
+    case updateUser(id: Int, name: String)
+    case deleteUser(id: Int)
+}
+
+extension UserAPI: TargetType {
+    typealias Response = UserDTO
+    
+    var path: String {
+        switch self {
+        case .fetchUsers:
+            return "/users"
+        case .fetchUser(let id), .updateUser(let id, _), .deleteUser(let id):
+            return "/users/\(id)"
+        case .createUser:
+            return "/users"
+        }
+    }
+    
+    var method: HTTPMethod {
+        switch self {
+        case .fetchUsers, .fetchUser:
+            return .get
+        case .createUser:
+            return .post
+        case .updateUser:
+            return .put
+        case .deleteUser:
+            return .delete
+        }
+    }
+    
+    var headers: [String: String]? {
+        switch self {
+        case .createUser, .updateUser:
+            return [HTTPHeader.contentType: ContentType.json]
+        default:
+            return nil
+        }
+    }
+    
+    var body: Data? {
+        switch self {
+        case .createUser(let name, let email):
+            let dto = ["name": name, "email": email]
+            return try? JSONEncoder().encode(dto)
+        case .updateUser(_, let name):
+            let dto = ["name": name]
+            return try? JSONEncoder().encode(dto)
+        default:
+            return nil
+        }
+    }
+}
+```
+
+### 2. Response Model
+
+```swift
+struct UserDTO: Responsable {
+    let id: Int
+    let name: String
+    let email: String
+}
+
+// Array도 자동으로 Responsable 지원
+extension UserAPI {
+    typealias Response = [UserDTO]  // 목록 조회용
+}
+```
+
+### 3. 사용 예시
+
+```swift
+let service = NetworkService(configuration: configuration)
+
+// 간결하고 명확한 API 호출
+let users = try await service.request(UserAPI.fetchUsers)
+let user = try await service.request(UserAPI.fetchUser(id: 1))
+let created = try await service.request(UserAPI.createUser(
+    name: "John Doe", 
+    email: "john@example.com"
+))
+```
+
+### 4. TargetType vs Requestable 비교
+
+**Requestable (기존 방식)**:
+```swift
+// ❌ 각 API마다 struct 필요
+struct FetchUsersRequest: Requestable {
+    typealias Response = [UserDTO]
+    var path: String { "/users" }
+    var method: HTTPMethod { .get }
+}
+
+struct FetchUserRequest: Requestable {
+    typealias Response = UserDTO
+    let id: Int
+    var path: String { "/users/\(id)" }
+    var method: HTTPMethod { .get }
+}
+
+// 사용
+let users = try await service.request(FetchUsersRequest())
+let user = try await service.request(FetchUserRequest(id: 1))
+```
+
+**TargetType (권장 방식)**:
+```swift
+// ✅ 하나의 Enum으로 관리
+enum UserAPI: TargetType {
+    case fetchUsers
+    case fetchUser(id: Int)
+    
+    typealias Response = UserDTO
+    
+    var path: String {
+        switch self {
+        case .fetchUsers: return "/users"
+        case .fetchUser(let id): return "/users/\(id)"
+        }
+    }
+    
+    var method: HTTPMethod { .get }
+}
+
+// 사용 (더 간결하고 명확)
+let users = try await service.request(UserAPI.fetchUsers)
+let user = try await service.request(UserAPI.fetchUser(id: 1))
+```
+
+### 5. TargetType 장점
+
+- ✅ **코드 절감**: 53% 이상 코드 감소 (관련 API 그룹화)
+- ✅ **가독성**: 의미 중심의 간결한 API 호출
+- ✅ **타입 안전성**: Enum case로 컴파일 타임 검증
+- ✅ **확장성**: 새 API 추가 시 case만 추가
+- ✅ **그룹화**: 도메인별 API를 한 곳에서 관리
+- ✅ **호환성**: 기존 Requestable과 함께 사용 가능
+
+더 자세한 비교는 [API 설계 개선 문서](./Documents/API-Design-Improvement.md)를 참조하세요.
 
 ## Interceptor 사용
 
