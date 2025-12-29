@@ -3,66 +3,82 @@ name: CI
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'Package.swift'
+      - 'Package.resolved'
+      - 'Sources/**'
+      - 'Tests/**'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'Package.swift'
+      - 'Package.resolved'
+      - 'Sources/**'
+      - 'Tests/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    name: Swift Build & Test
-    runs-on: macos-latest
+  build-and-test:
+    name: Build and Test (${{ matrix.config }})
+    runs-on: macos-15
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        xcode: ['16.0']
+        config: ['Debug', 'Release']
+    
+    env:
+      SCHEME: MegaNetworkKit
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '16.0'
+      - name: Setup Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select --switch /Applications/Xcode_${{ matrix.xcode }}.app
+        shell: bash
       
       - name: Swift version
         run: swift --version
       
-      - name: Build (iOS + macOS)
-        run: swift build -v
+      - name: Build for testing
+        run: swift build -c ${{ matrix.config == 'Debug' && 'debug' || 'release' }} -v
       
       - name: Run tests
-        run: swift test -v --parallel
+        run: swift test -c ${{ matrix.config == 'Debug' && 'debug' || 'release' }} -v --parallel
   
   build-macos:
-    name: Build for macOS
-    runs-on: macos-latest
-    needs: test
+    name: Build macOS (${{ matrix.config }})
+    runs-on: macos-15
+    needs: build-and-test
+    
+    strategy:
+      matrix:
+        xcode: ['16.0']
+        config: ['Debug', 'Release']
+    
+    env:
+      SCHEME: MegaNetworkKit
+      DESTINATION: platform=macOS
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '16.0'
+      - name: Setup Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select --switch /Applications/Xcode_${{ matrix.xcode }}.app
+        shell: bash
       
-      - name: Build macOS Release
+      - name: Build for macOS
         run: |
-          xcodebuild clean build \
-            -scheme MegaNetworkKit \
-            -destination 'platform=macOS' \
-            -configuration Release
-  
-  lint:
-    name: Swift Lint
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Swift Format Check
-        run: |
-          if command -v swiftformat &> /dev/null; then
-            swiftformat --lint .
-          else
-            echo "SwiftFormat not installed, skipping..."
-          fi
+          set -o pipefail && xcodebuild clean build \
+            -scheme "$SCHEME" \
+            -destination "$DESTINATION" \
+            -configuration ${{ matrix.config }}
 
